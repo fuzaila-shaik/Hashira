@@ -1,0 +1,53 @@
+import java.math.BigInteger;
+import java.util.*;
+import java.util.regex.*;
+
+public class Main {
+    public static void main(String[] args) {
+        String jsonInput = "{\n" +
+                "    \"keys\": {\n" +
+                "        \"n\": 4,\n" +
+                "        \"k\": 3\n" +
+                "    },\n" +
+                "    \"1\": { \"base\": \"10\", \"value\": \"4\" },\n" +
+                "    \"2\": { \"base\": \"2\", \"value\": \"111\" },\n" +
+                "    \"3\": { \"base\": \"10\", \"value\": \"12\" },\n" +
+                "    \"6\": { \"base\": \"4\", \"value\": \"213\" }\n" +
+                "}";
+
+        Pattern keysPattern = Pattern.compile("\"n\":\\s*(\\d+).*?\"k\":\\s*(\\d+)", Pattern.DOTALL);
+        Matcher km = keysPattern.matcher(jsonInput);
+        int n = 0, k = 0;
+        if (km.find()) {
+            n = Integer.parseInt(km.group(1));
+            k = Integer.parseInt(km.group(2));
+        }
+        int degree = k - 1;
+
+        Pattern rootPattern = Pattern.compile("\"(\\d+)\":\\s*\\{\\s*\"base\":\\s*\"(\\d+)\",\\s*\"value\":\\s*\"([0-9a-zA-Z]+)\"\\s*\\}");
+        Matcher rm = rootPattern.matcher(jsonInput);
+
+        TreeMap<Integer, BigInteger> rootMap = new TreeMap<>();
+        while (rm.find()) {
+            int key = Integer.parseInt(rm.group(1));
+            int base = Integer.parseInt(rm.group(2));
+            String value = rm.group(3);
+            BigInteger root = new BigInteger(value, base);
+            rootMap.put(key, root);
+        }
+
+        int count = 0;
+        BigInteger c = BigInteger.ONE;
+        for (Map.Entry<Integer, BigInteger> entry : rootMap.entrySet()) {
+            if (count == degree) break;
+            c = c.multiply(entry.getValue());
+            count++;
+        }
+
+        if (degree % 2 != 0) {
+            c = c.negate();
+        }
+
+        System.out.println("c = " + c);
+    }
+}

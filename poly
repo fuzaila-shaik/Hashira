@@ -1,0 +1,64 @@
+import org.json.*;
+import java.io.*;
+import java.math.BigInteger;
+import java.util.*;
+
+public class ShamirSecret {
+    
+    // Convert from base -> decimal
+    static BigInteger decode(String value, int base) {
+        return new BigInteger(value, base);
+    }
+
+    // Lagrange interpolation to find f(0)
+    static BigInteger lagrangeInterpolation(List<BigInteger> x, List<BigInteger> y, int k) {
+        BigInteger result = BigInteger.ZERO;
+
+        for (int i = 0; i < k; i++) {
+            BigInteger xi = x.get(i);
+            BigInteger yi = y.get(i);
+
+            // Compute basis polynomial
+            BigInteger term = yi;
+            for (int j = 0; j < k; j++) {
+                if (j != i) {
+                    BigInteger xj = x.get(j);
+                    // (0 - xj) / (xi - xj)
+                    term = term.multiply(xj.negate()).divide(xi.subtract(xj));
+                }
+            }
+            result = result.add(term);
+        }
+        return result;
+    }
+
+    public static void main(String[] args) throws Exception {
+        // Read JSON from file
+        String jsonData = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("testcase1.json")));
+        JSONObject obj = new JSONObject(jsonData);
+
+        JSONObject keys = obj.getJSONObject("keys");
+        int n = keys.getInt("n");
+        int k = keys.getInt("k");
+
+        List<BigInteger> xVals = new ArrayList<>();
+        List<BigInteger> yVals = new ArrayList<>();
+
+        for (String key : obj.keySet()) {
+            if (key.equals("keys")) continue;
+            JSONObject point = obj.getJSONObject(key);
+            int base = Integer.parseInt(point.getString("base"));
+            String val = point.getString("value");
+
+            xVals.add(new BigInteger(key));
+            yVals.add(decode(val, base));
+        }
+
+        // Only need first k points
+        List<BigInteger> xSub = xVals.subList(0, k);
+        List<BigInteger> ySub = yVals.subList(0, k);
+
+        BigInteger secret = lagrangeInterpolation(xSub, ySub, k);
+        System.out.println("Secret: " + secret);
+    }
+}
